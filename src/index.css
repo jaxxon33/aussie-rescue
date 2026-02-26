@@ -1,0 +1,272 @@
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+  --secondary: #3b82f6;
+  --bg-color: #0f172a;
+  --card-bg: rgba(30, 41, 59, 0.85);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --danger: #ef4444;
+  --danger-flash: #b91c1c;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-container {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.app-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.gui-panel {
+  pointer-events: auto;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Authentication Forms */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.input-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select {
+  padding: 0.75rem 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.checkbox-group input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: var(--primary-dark);
+}
+
+button.danger {
+  background: var(--danger);
+}
+button.danger:hover {
+  background: var(--danger-flash);
+}
+
+.toggle-link {
+  color: var(--primary);
+  text-align: center;
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.toggle-link:hover {
+  text-decoration: underline;
+}
+
+/* Main UI Elements */
+.bottom-controls {
+  pointer-events: auto;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+  width: 100%;
+}
+
+.fab {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.fab:hover {
+  transform: scale(1.05);
+}
+
+.fab.help {
+  background: var(--danger);
+  width: 80px;
+  height: 80px;
+}
+.fab.help.active {
+  animation: pulse-help 1.5s infinite;
+}
+
+@keyframes pulse-help {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.top-bar {
+  pointer-events: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-badge {
+  background: rgba(0,0,0,0.6);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Map Markers */
+.marker-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.marker-blue { background-color: #3b82f6; } /* My vehicle */
+.marker-green { background-color: #10b981; } /* Other vehicle */
+.marker-red { background-color: #ef4444; } /* Stranded */
+
+.marker-flash-green {
+  background-color: #10b981;
+  animation: flash-green 1s infinite alternate;
+}
+
+.marker-flash-red {
+  background-color: #ef4444;
+  animation: flash-red 1s infinite alternate;
+}
+
+@keyframes flash-green { 0% { opacity: 1; } 100% { opacity: 0.3; } }
+@keyframes flash-red { 0% { opacity: 1; } 100% { opacity: 0.3; } }
+
+.leaflet-popup-content-wrapper {
+  background: var(--card-bg);
+  color: var(--text-main);
+  backdrop-filter: blur(8px);
+}
+.leaflet-popup-tip {
+  background: var(--card-bg);
+}
+
+.popup-details h3 {
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+.popup-details p {
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.app-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  pointer-events: auto;
+}
