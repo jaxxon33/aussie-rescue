@@ -13,7 +13,7 @@ function MapController({ centerPos }) {
     return null;
 }
 
-export default function MapView({ users, currentUser, myPos, myState, centerMapTo }) {
+export default function MapView({ users, currentUser, myPos, myState, centerMapTo, onOpenChat }) {
     const getMarkerIcon = (u) => {
         const isMe = u.id === currentUser.id;
         let colorClass = 'marker-green';
@@ -129,6 +129,16 @@ export default function MapView({ users, currentUser, myPos, myState, centerMapT
                                                 Cancel Attending
                                             </button>
                                         )}
+
+                                    {/* Message button for other users */}
+                                    {u.id !== currentUser.id && (
+                                        <button
+                                            className="popup-btn message-btn"
+                                            onClick={() => onOpenChat?.(u.id)}
+                                        >
+                                            💬 Message
+                                        </button>
+                                    )}
                                 </div>
                             </Popup>
                         </Marker>

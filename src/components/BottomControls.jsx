@@ -1,13 +1,22 @@
 import React from 'react';
-import { LocateFixed, EyeOff, Eye, Search, AlertTriangle } from 'lucide-react';
+import {
+    LocateFixed,
+    EyeOff,
+    Eye,
+    Search,
+    AlertTriangle,
+    MessageCircle,
+} from 'lucide-react';
 
 export default function BottomControls({
     visible,
     myState,
+    unreadMessages,
     onToggleVisibility,
     onCallHelp,
     onCenter,
     onShowRigs,
+    onShowMessages,
 }) {
     return (
         <div className="bottom-controls">
@@ -22,14 +31,13 @@ export default function BottomControls({
 
             <div
                 className="fab"
-                onClick={onToggleVisibility}
-                style={{ background: 'var(--card-bg)' }}
-                title={visible ? 'Hide My Location' : 'Show My Location'}
+                onClick={onShowMessages}
+                style={{ background: 'var(--card-bg)', position: 'relative' }}
+                title="Messages"
             >
-                {visible ? (
-                    <Eye size={24} color="#fff" />
-                ) : (
-                    <EyeOff size={24} color="#aaa" />
+                <MessageCircle size={24} color="#fff" />
+                {unreadMessages > 0 && (
+                    <span className="fab-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>
                 )}
             </div>
 
@@ -39,6 +47,19 @@ export default function BottomControls({
                 title={myState === 'needs_help' ? 'Cancel Help Call' : 'Call for Help'}
             >
                 <AlertTriangle size={36} color="#fff" />
+            </div>
+
+            <div
+                className="fab"
+                onClick={onToggleVisibility}
+                style={{ background: 'var(--card-bg)' }}
+                title={visible ? 'Hide My Location' : 'Show My Location'}
+            >
+                {visible ? (
+                    <Eye size={24} color="#fff" />
+                ) : (
+                    <EyeOff size={24} color="#aaa" />
+                )}
             </div>
 
             <div

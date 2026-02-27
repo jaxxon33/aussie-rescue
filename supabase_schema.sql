@@ -50,6 +50,41 @@ CREATE POLICY "Users can update own profile"
   TO authenticated
   USING (id = auth.uid());
 
--- 5. (Optional) PostGIS for advanced distance queries
+-- 4. Turn on Realtime for the profiles table
+ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
+
+-- 5. Messages table for vehicle-to-vehicle messaging
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  recipient_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  content TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+-- Users can read messages they sent or received
+CREATE POLICY "Users can read own messages"
+  ON messages FOR SELECT
+  TO authenticated
+  USING (sender_id = auth.uid() OR recipient_id = auth.uid());
+
+-- Users can send messages as themselves
+CREATE POLICY "Users can send messages"
+  ON messages FOR INSERT
+  TO authenticated
+  WITH CHECK (sender_id = auth.uid());
+
+-- Users can mark received messages as read
+CREATE POLICY "Users can update received messages"
+  ON messages FOR UPDATE
+  TO authenticated
+  USING (recipient_id = auth.uid());
+
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+
+-- 6. (Optional) PostGIS for advanced distance queries
 -- CREATE EXTENSION IF NOT EXISTS postgis;
 

@@ -3,10 +3,13 @@ import { User as UserIcon } from 'lucide-react';
 import { supabase } from '../supabase';
 import useGeolocation from '../hooks/useGeolocation';
 import useSupabaseRealtime from '../hooks/useSupabaseRealtime';
+import useMessages from '../hooks/useMessages';
+import useHelpAlerts from '../hooks/useHelpAlerts';
 import MapView from './MapView';
 import BottomControls from './BottomControls';
 import ProfileModal from './ProfileModal';
 import RescueRigsModal from './RescueRigsModal';
+import MessagesModal from './MessagesModal';
 import ConfirmModal from './ConfirmModal';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -23,7 +26,9 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
   // Modals
   const [showProfile, setShowProfile] = useState(false);
   const [showRigs, setShowRigs] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
   const [showHelpConfirm, setShowHelpConfirm] = useState(false);
+  const [chatWithUserId, setChatWithUserId] = useState(null);
 
   // ── GPS with throttled DB writes ──
   const handlePositionUpdate = useCallback(
@@ -50,6 +55,17 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
   // ── Realtime ──
   const { users, loading } = useSupabaseRealtime(currentUser.id);
 
+  // ── Messages ──
+  const {
+    unreadCount,
+    sendMessage,
+    markAsRead,
+    getConversations,
+  } = useMessages(currentUser.id);
+
+  // ── Help Alerts ──
+  const { alerts, dismissAlert } = useHelpAlerts(users, currentUser.id);
+
   // Derive effective state from real-time data
   const myRealtimeData = users.find((u) => u.id === currentUser.id);
   const effectiveState = myRealtimeData?.state || myState;
@@ -75,16 +91,12 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
 
   const handleCallHelp = async () => {
     if (effectiveState === 'needs_help') {
-      // Cancel distress
       await supabase
         .from('profiles')
         .update({ state: 'normal', attending_to: null })
         .eq('id', currentUser.id);
       setMyState('normal');
       setAttendingTo(null);
-    } else if (effectiveState === 'attending') {
-      // Cancel attending first, then call help
-      setShowHelpConfirm(true);
     } else {
       setShowHelpConfirm(true);
     }
@@ -118,6 +130,18 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
     setVisible(newVal);
   };
 
+  const handleOpenChat = (userId) => {
+    setChatWithUserId(userId);
+    setShowMessages(true);
+  };
+
+  const handleAlertClick = (alert) => {
+    if (alert.lat && alert.lon) {
+      setCenterMapTo([alert.lat, alert.lon]);
+    }
+    dismissAlert(alert.id);
+  };
+
   // ── Render ──
   if (loading && users.length === 0) {
     return <LoadingSpinner fullScreen />;
@@ -147,6 +171,31 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         </div>
       )}
 
+      {/* Help Alert Banners */}
+      {alerts.map((alert) => (
+        <div
+          key={alert.id}
+          className="help-alert-banner"
+          onClick={() => handleAlertClick(alert)}
+        >
+          <div className="help-alert-content">
+            <span className="help-alert-icon">🚨</span>
+            <div>
+              <strong>{alert.username}</strong> needs emergency help!
+            </div>
+          </div>
+          <button
+            className="dismiss-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              dismissAlert(alert.id);
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+
       {/* Map */}
       <MapView
         users={users}
@@ -157,6 +206,7 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         myPos={myPos}
         myState={effectiveState}
         centerMapTo={centerMapTo}
+        onOpenChat={handleOpenChat}
       />
 
       {/* Overlay UI */}
@@ -184,10 +234,15 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         <BottomControls
           visible={effectiveVisible}
           myState={effectiveState}
+          unreadMessages={unreadCount}
           onToggleVisibility={toggleVisibility}
           onCallHelp={handleCallHelp}
           onCenter={handleCenter}
           onShowRigs={() => setShowRigs(true)}
+          onShowMessages={() => {
+            setChatWithUserId(null);
+            setShowMessages(true);
+          }}
         />
       </div>
 
@@ -208,6 +263,21 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
           onUpdate={(updated) => {
             onProfileUpdate(updated);
             setShowProfile(false);
+          }}
+        />
+      )}
+
+      {showMessages && (
+        <MessagesModal
+          conversations={getConversations(users)}
+          users={users}
+          currentUserId={currentUser.id}
+          initialChatUserId={chatWithUserId}
+          onSendMessage={sendMessage}
+          onMarkAsRead={markAsRead}
+          onClose={() => {
+            setShowMessages(false);
+            setChatWithUserId(null);
           }}
         />
       )}
