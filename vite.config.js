@@ -7,5 +7,5 @@ export default defineConfig({
   // IMPORTANT: Replace 'REPOSITORY_NAME' below with your actual GitHub repository name
   // For example, if your repo is github.com/username/aussie-rescue, base should be '/aussie-rescue/'
   // If you are using a custom domain or User Page (username.github.io), you can remove this or set it to '/'
-  base: '/REPOSITORY_NAME/',
+  base: '/aussie-rescue/',
 })
