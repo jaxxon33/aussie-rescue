@@ -37,15 +37,14 @@ function App() {
   }, []);
 
   const fetchProfile = async (userId) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
 
     if (data) {
-      // On first login after email verification, the auto-trigger created a
-      // stub profile (just id + username). Fill in the rest from auth metadata.
+      // Profile exists — if it's a stub (no vehicle_type), fill from auth metadata
       if (!data.vehicle_type) {
         const { data: { user } } = await supabase.auth.getUser();
         const meta = user?.user_metadata;
@@ -53,6 +52,7 @@ function App() {
           const { data: updated } = await supabase
             .from('profiles')
             .update({
+              username: meta.username || data.username,
               name: meta.name || data.name,
               phone: meta.phone || data.phone,
               cb_channel: meta.cb_channel || data.cb_channel,
@@ -72,6 +72,29 @@ function App() {
         }
       }
       setProfile(data);
+    } else if (error) {
+      // No profile exists yet — create one from auth metadata
+      // (this happens on first login after email verification)
+      const { data: { user } } = await supabase.auth.getUser();
+      const meta = user?.user_metadata || {};
+      const { data: newProfile } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          username: meta.username || user.email,
+          name: meta.name || '',
+          phone: meta.phone || '',
+          cb_channel: meta.cb_channel || '',
+          vehicle_type: meta.vehicle_type || '',
+          modifications: meta.modifications || '',
+          url: meta.url || '',
+          rescue_rig: meta.rescue_rig || false,
+          state: 'normal',
+          visible: true,
+        })
+        .select()
+        .single();
+      if (newProfile) setProfile(newProfile);
     }
     setLoading(false);
   };

@@ -50,27 +50,6 @@ CREATE POLICY "Users can update own profile"
   TO authenticated
   USING (id = auth.uid());
 
--- 4. Turn on Realtime for the profiles table
-ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
-
--- 5. Auto-create a profile stub when a new user signs up (optional helper)
--- This trigger ensures a profile row always exists after signup.
--- The app will fill in the remaining fields during registration.
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO profiles (id, username)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'username', NEW.email));
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Drop existing trigger if re-running
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
-
--- 6. (Optional) PostGIS for advanced distance queries
+-- 5. (Optional) PostGIS for advanced distance queries
 -- CREATE EXTENSION IF NOT EXISTS postgis;
+
