@@ -6,20 +6,32 @@ import {
     Search,
     AlertTriangle,
     MessageCircle,
+    Layers,
 } from 'lucide-react';
 
 export default function BottomControls({
     visible,
     myState,
     unreadMessages,
+    mapMode,
     onToggleVisibility,
     onCallHelp,
     onCenter,
     onShowRigs,
     onShowMessages,
+    onToggleMapMode,
 }) {
     return (
         <div className="bottom-controls">
+            <div
+                className="fab"
+                onClick={onToggleMapMode}
+                style={{ background: 'var(--card-bg)' }}
+                title={`Switch to ${mapMode === 'street' ? 'Satellite' : 'Street'} View`}
+            >
+                <Layers size={24} color="#fff" />
+            </div>
+
             <div
                 className="fab"
                 onClick={onShowRigs}

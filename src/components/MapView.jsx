@@ -80,10 +80,21 @@ export default function MapView({ users, currentUser, myPos, myState, centerMapT
                 style={{ height: '100%', width: '100%' }}
                 zoomControl={false}
             >
-                <TileLayer
-                    attribution="&copy; OpenStreetMap contributors"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                {/* Standard Street View */}
+                {mapMode === 'street' && (
+                    <TileLayer
+                        attribution="&copy; OpenStreetMap contributors"
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                )}
+
+                {/* Satellite View (Esri) */}
+                {mapMode === 'satellite' && (
+                    <TileLayer
+                        attribution="&copy; Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community"
+                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    />
+                )}
                 <MapController centerPos={centerMapTo} />
 
                 {visibleUsers.map((u) => {

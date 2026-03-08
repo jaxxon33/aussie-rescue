@@ -22,6 +22,7 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
   const [attendingTo, setAttendingTo] = useState(
     currentUser.attending_to || null
   );
+  const [mapMode, setMapMode] = useState('street');
 
   // Modals
   const [showProfile, setShowProfile] = useState(false);
@@ -183,6 +184,10 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
     dismissAlert(alert.id);
   };
 
+  const toggleMapMode = () => {
+    setMapMode((prev) => (prev === 'street' ? 'satellite' : 'street'));
+  };
+
   // ── Render ──
   if (loading && users.length === 0) {
     return <LoadingSpinner fullScreen />;
@@ -270,6 +275,7 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         }}
         myPos={myPos}
         myState={effectiveState}
+        mapMode={mapMode}
         centerMapTo={centerMapTo}
         onOpenChat={handleOpenChat}
         onError={showToast}
@@ -300,6 +306,7 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         <BottomControls
           visible={effectiveVisible}
           myState={effectiveState}
+          mapMode={mapMode}
           unreadMessages={unreadCount}
           onToggleVisibility={toggleVisibility}
           onCallHelp={handleCallHelp}
@@ -309,6 +316,7 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
             setChatWithUserId(null);
             setShowMessages(true);
           }}
+          onToggleMapMode={toggleMapMode}
         />
       </div>
 

@@ -4,30 +4,35 @@
 
 :root {
   --primary: #10b981;
-  --primary-dark: #059669;
-  --primary-glow: rgba(16, 185, 129, 0.25);
-  --secondary: #3b82f6;
-  --secondary-dark: #2563eb;
-  --bg-color: #0f172a;
-  --bg-surface: #1e293b;
-  --card-bg: rgba(30, 41, 59, 0.88);
+  --primary-dark: #069668;
+  --primary-glow: rgba(16, 185, 129, 0.3);
+  --secondary: #6366f1;
+  /* More vivid indigo */
+  --secondary-dark: #4f46e5;
+  --accent: #f59e0b;
+  --bg-color: #020617;
+  /* Deeper navy/black */
+  --bg-surface: #0f172a;
+  --card-bg: rgba(15, 23, 42, 0.82);
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  --danger: #ef4444;
-  --danger-dark: #dc2626;
-  --danger-flash: #b91c1c;
+  --text-dim: #475569;
+  --danger: #f43f5e;
+  /* More vivid rose */
+  --danger-dark: #e11d48;
   --warning: #f59e0b;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.12);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.3);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-light: rgba(255, 255, 255, 0.1);
+  --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --accent-gradient: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  --danger-gradient: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --transition: 0.2s ease;
-  /* Safe-area insets for notched/Dynamic Island phones */
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 30px;
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Safe-area insets */
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
