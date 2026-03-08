@@ -13,7 +13,7 @@ function MapController({ centerPos }) {
     return null;
 }
 
-export default function MapView({ users, currentUser, myPos, myState, centerMapTo, onOpenChat }) {
+export default function MapView({ users, currentUser, myPos, myState, centerMapTo, onOpenChat, onError }) {
     const getMarkerIcon = (u) => {
         const isMe = u.id === currentUser.id;
         let colorClass = 'marker-green';
@@ -45,17 +45,23 @@ export default function MapView({ users, currentUser, myPos, myState, centerMapT
     };
 
     const handleAttend = async (strandedUserId) => {
-        await supabase
+        const { error } = await supabase
             .from('profiles')
             .update({ state: 'attending', attending_to: strandedUserId })
             .eq('id', currentUser.id);
+        if (error) {
+            onError?.('Failed to mark as attending. Try again.');
+        }
     };
 
     const handleCancelAttend = async () => {
-        await supabase
+        const { error } = await supabase
             .from('profiles')
             .update({ state: 'normal', attending_to: null })
             .eq('id', currentUser.id);
+        if (error) {
+            onError?.('Failed to cancel attending. Try again.');
+        }
     };
 
     const visibleUsers = users.filter(

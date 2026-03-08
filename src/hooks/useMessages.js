@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabase';
+
+const MAX_MESSAGE_LENGTH = 1000;
 
 /**
  * Hook for managing direct messages between users.
@@ -8,13 +10,24 @@ import { supabase } from '../supabase';
 export default function useMessages(currentUserId) {
     const [messages, setMessages] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const messagesRef = useRef(messages);
+
+    // Keep messagesRef in sync without triggering re-renders
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
 
     const fetchMessages = useCallback(async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('messages')
             .select('*')
             .or(`sender_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
             .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Failed to fetch messages:', error.message);
+            return;
+        }
 
         if (data) {
             setMessages(data);
@@ -63,19 +76,36 @@ export default function useMessages(currentUserId) {
         return () => supabase.removeChannel(channel);
     }, [currentUserId, fetchMessages]);
 
+    const lastSendRef = useRef(0);
+
     const sendMessage = useCallback(
         async (recipientId, content) => {
+            // Client-side rate limiting (throttle)
+            const now = Date.now();
+            if (now - lastSendRef.current < 2000) {
+                return { data: null, error: { message: 'Sending too fast. Slow down, mate.' } };
+            }
+
+            // Enforce length limit
+            const trimmed = content.trim().slice(0, MAX_MESSAGE_LENGTH);
+            if (!trimmed) return { data: null, error: { message: 'Message is empty' } };
+
+            lastSendRef.current = now;
+
             const { data, error } = await supabase
                 .from('messages')
                 .insert({
                     sender_id: currentUserId,
                     recipient_id: recipientId,
-                    content: content.trim(),
+                    content: trimmed,
                 })
                 .select()
                 .single();
 
-            if (data) {
+            if (error) {
+                console.error('Failed to send message:', error.message);
+                lastSendRef.current = 0; // reset on error so they can try again
+            } else if (data) {
                 setMessages((prev) => {
                     if (prev.some((m) => m.id === data.id)) return prev;
                     return [...prev, data];
@@ -89,7 +119,9 @@ export default function useMessages(currentUserId) {
 
     const markAsRead = useCallback(
         async (otherUserId) => {
-            const unreadIds = messages
+            // Use ref to avoid depending on messages state
+            const currentMessages = messagesRef.current;
+            const unreadIds = currentMessages
                 .filter(
                     (m) =>
                         m.sender_id === otherUserId &&
@@ -100,10 +132,15 @@ export default function useMessages(currentUserId) {
 
             if (unreadIds.length === 0) return;
 
-            await supabase
+            const { error } = await supabase
                 .from('messages')
                 .update({ read: true })
                 .in('id', unreadIds);
+
+            if (error) {
+                console.error('Failed to mark messages as read:', error.message);
+                return;
+            }
 
             setMessages((prev) =>
                 prev.map((m) =>
@@ -112,7 +149,7 @@ export default function useMessages(currentUserId) {
             );
             setUnreadCount((prev) => Math.max(0, prev - unreadIds.length));
         },
-        [messages, currentUserId]
+        [currentUserId] // No longer depends on `messages` — uses ref instead
     );
 
     const getConversations = useCallback(

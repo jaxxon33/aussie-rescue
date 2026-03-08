@@ -2,6 +2,23 @@ import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import LoadingSpinner from './LoadingSpinner';
 
+const MAX_USERNAME = 40;
+const MAX_NAME = 80;
+const MAX_PHONE = 20;
+const MAX_VEHICLE = 100;
+const MAX_MODS = 200;
+const MAX_URL = 250;
+
+function isValidUrl(str) {
+    if (!str || !str.trim()) return true; // optional field
+    try {
+        const url = new URL(str);
+        return url.protocol === 'https:' || url.protocol === 'http:';
+    } catch {
+        return false;
+    }
+}
+
 export default function ProfileModal({ profile, onClose, onUpdate }) {
     const [form, setForm] = useState({
         username: profile.username || '',
@@ -29,12 +46,32 @@ export default function ProfileModal({ profile, onClose, onUpdate }) {
             return;
         }
 
+        if (form.username.trim().length < 2) {
+            setError('Username must be at least 2 characters.');
+            return;
+        }
+
+        if (!isValidUrl(form.url)) {
+            setError('URL must start with http:// or https://');
+            return;
+        }
+
         setSaving(true);
         setError('');
 
+        // Explicitly specify only the allowed profile fields
         const { data, error: updateError } = await supabase
             .from('profiles')
-            .update(form)
+            .update({
+                username: form.username.trim(),
+                name: form.name.trim(),
+                phone: form.phone.trim(),
+                cb_channel: form.cb_channel,
+                vehicle_type: form.vehicle_type.trim(),
+                modifications: form.modifications.trim(),
+                url: form.url.trim(),
+                rescue_rig: form.rescue_rig,
+            })
             .eq('id', profile.id)
             .select()
             .single();
@@ -79,6 +116,7 @@ export default function ProfileModal({ profile, onClose, onUpdate }) {
                         type="text"
                         value={form.username}
                         onChange={(e) => handleChange('username', e.target.value)}
+                        maxLength={MAX_USERNAME}
                     />
                 </div>
                 <div className="input-group">
@@ -87,14 +125,16 @@ export default function ProfileModal({ profile, onClose, onUpdate }) {
                         type="text"
                         value={form.name}
                         onChange={(e) => handleChange('name', e.target.value)}
+                        maxLength={MAX_NAME}
                     />
                 </div>
                 <div className="input-group">
                     <label>Phone</label>
                     <input
-                        type="text"
+                        type="tel"
                         value={form.phone}
                         onChange={(e) => handleChange('phone', e.target.value)}
+                        maxLength={MAX_PHONE}
                     />
                 </div>
                 <div className="input-group">
@@ -103,6 +143,8 @@ export default function ProfileModal({ profile, onClose, onUpdate }) {
                         type="number"
                         value={form.cb_channel}
                         onChange={(e) => handleChange('cb_channel', e.target.value)}
+                        min="1"
+                        max="80"
                     />
                 </div>
                 <div className="input-group">
@@ -111,6 +153,7 @@ export default function ProfileModal({ profile, onClose, onUpdate }) {
                         type="text"
                         value={form.vehicle_type}
                         onChange={(e) => handleChange('vehicle_type', e.target.value)}
+                        maxLength={MAX_VEHICLE}
                     />
                 </div>
                 <div className="input-group">
@@ -119,14 +162,17 @@ export default function ProfileModal({ profile, onClose, onUpdate }) {
                         type="text"
                         value={form.modifications}
                         onChange={(e) => handleChange('modifications', e.target.value)}
+                        maxLength={MAX_MODS}
                     />
                 </div>
                 <div className="input-group">
                     <label>Website / YouTube URL</label>
                     <input
-                        type="text"
+                        type="url"
                         value={form.url}
                         onChange={(e) => handleChange('url', e.target.value)}
+                        placeholder="https://..."
+                        maxLength={MAX_URL}
                     />
                 </div>
                 <div className="checkbox-group">

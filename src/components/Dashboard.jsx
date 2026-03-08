@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { User as UserIcon } from 'lucide-react';
 import { supabase } from '../supabase';
 import useGeolocation from '../hooks/useGeolocation';
@@ -30,13 +30,38 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
   const [showHelpConfirm, setShowHelpConfirm] = useState(false);
   const [chatWithUserId, setChatWithUserId] = useState(null);
 
+  // Toast notification for errors
+  const [toast, setToast] = useState(null);
+
+  // Online/offline detection
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const showToast = useCallback((message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
   // ── GPS with throttled DB writes ──
   const handlePositionUpdate = useCallback(
     async (lat, lon) => {
-      await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ lat, lon })
         .eq('id', currentUser.id);
+      if (error) {
+        console.error('GPS update failed:', error.message);
+      }
     },
     [currentUser.id]
   );
@@ -91,10 +116,14 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
 
   const handleCallHelp = async () => {
     if (effectiveState === 'needs_help') {
-      await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ state: 'normal', attending_to: null })
         .eq('id', currentUser.id);
+      if (error) {
+        showToast('Failed to cancel help call. Try again.');
+        return;
+      }
       setMyState('normal');
       setAttendingTo(null);
     } else {
@@ -103,30 +132,42 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
   };
 
   const confirmCallHelp = async () => {
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({ state: 'needs_help', attending_to: null })
       .eq('id', currentUser.id);
+    if (error) {
+      showToast('Failed to call for help. Try again.');
+      return;
+    }
     setMyState('needs_help');
     setAttendingTo(null);
     setShowHelpConfirm(false);
   };
 
   const cancelAttending = async () => {
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({ state: 'normal', attending_to: null })
       .eq('id', currentUser.id);
+    if (error) {
+      showToast('Failed to cancel attending. Try again.');
+      return;
+    }
     setMyState('normal');
     setAttendingTo(null);
   };
 
   const toggleVisibility = async () => {
     const newVal = !effectiveVisible;
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({ visible: newVal })
       .eq('id', currentUser.id);
+    if (error) {
+      showToast('Failed to update visibility. Try again.');
+      return;
+    }
     setVisible(newVal);
   };
 
@@ -161,6 +202,26 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         </div>
       )}
 
+      {/* Toast Error Banner */}
+      {toast && (
+        <div className="toast-banner">
+          <div>
+            <strong>⚠️</strong> {toast}
+          </div>
+          <button className="dismiss-btn" onClick={() => setToast(null)}>
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="offline-banner">
+          <span>📡</span>
+          <span>You're offline — locations and messages won't update until connection is restored.</span>
+        </div>
+      )}
+
       {/* Attending Banner */}
       {effectiveState === 'attending' && attendingUser && (
         <div className="attending-banner">
@@ -171,30 +232,34 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         </div>
       )}
 
-      {/* Help Alert Banners */}
-      {alerts.map((alert) => (
-        <div
-          key={alert.id}
-          className="help-alert-banner"
-          onClick={() => handleAlertClick(alert)}
-        >
-          <div className="help-alert-content">
-            <span className="help-alert-icon">🚨</span>
-            <div>
-              <strong>{alert.username}</strong> needs emergency help!
+      {/* Help Alert Banners — stacked properly */}
+      {alerts.length > 0 && (
+        <div className="help-alerts-container">
+          {alerts.map((alert) => (
+            <div
+              key={alert.id}
+              className="help-alert-banner"
+              onClick={() => handleAlertClick(alert)}
+            >
+              <div className="help-alert-content">
+                <span className="help-alert-icon">🚨</span>
+                <div>
+                  <strong>{alert.username}</strong> needs emergency help!
+                </div>
+              </div>
+              <button
+                className="dismiss-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissAlert(alert.id);
+                }}
+              >
+                ✕
+              </button>
             </div>
-          </div>
-          <button
-            className="dismiss-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              dismissAlert(alert.id);
-            }}
-          >
-            ✕
-          </button>
+          ))}
         </div>
-      ))}
+      )}
 
       {/* Map */}
       <MapView
@@ -207,6 +272,7 @@ export default function Dashboard({ currentUser, onLogout, onProfileUpdate }) {
         myState={effectiveState}
         centerMapTo={centerMapTo}
         onOpenChat={handleOpenChat}
+        onError={showToast}
       />
 
       {/* Overlay UI */}

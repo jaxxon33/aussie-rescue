@@ -11,7 +11,9 @@ export default function useSupabaseRealtime(currentUserId) {
 
     const fetchUsers = useCallback(async () => {
         try {
-            const { data, error } = await supabase.from('profiles').select('*');
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, username, name, vehicle_type, modifications, cb_channel, rescue_rig, lat, lon, state, attending_to, visible');
             if (!error && data) setUsers(data);
         } catch (e) {
             console.error('Error fetching profiles:', e);

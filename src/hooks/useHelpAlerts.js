@@ -7,12 +7,32 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 export default function useHelpAlerts(users, currentUserId) {
     const prevStatesRef = useRef({});
     const [alerts, setAlerts] = useState([]);
+    const audioCtxRef = useRef(null);
 
-    // Request browser notification permission on mount
-    useEffect(() => {
-        if ('Notification' in window && Notification.permission === 'default') {
-            // We'll request when the first alert fires, to avoid prompting immediately
+    // Lazily create and reuse a single AudioContext
+    const getAudioContext = () => {
+        if (!audioCtxRef.current) {
+            try {
+                audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            } catch {
+                // Audio not supported
+            }
         }
+        // Resume if suspended (browsers auto-suspend after inactivity)
+        if (audioCtxRef.current?.state === 'suspended') {
+            audioCtxRef.current.resume().catch(() => { });
+        }
+        return audioCtxRef.current;
+    };
+
+    // Clean up AudioContext on unmount
+    useEffect(() => {
+        return () => {
+            if (audioCtxRef.current) {
+                audioCtxRef.current.close().catch(() => { });
+                audioCtxRef.current = null;
+            }
+        };
     }, []);
 
     // Watch for state changes to 'needs_help'
@@ -82,8 +102,10 @@ export default function useHelpAlerts(users, currentUserId) {
     };
 
     const playAlertSound = () => {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
             // Play two quick alert beeps
             [0, 0.3].forEach((delay) => {
                 const osc = ctx.createOscillator();
@@ -97,7 +119,7 @@ export default function useHelpAlerts(users, currentUserId) {
                 osc.stop(ctx.currentTime + delay + 0.2);
             });
         } catch (e) {
-            // Audio not supported
+            // Audio playback failed
         }
     };
 

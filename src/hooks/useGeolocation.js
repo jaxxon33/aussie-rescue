@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { calcDistMeters } from '../utils/geo';
 
 /**
  * Custom hook for GPS tracking with throttled updates.
@@ -22,16 +23,6 @@ export default function useGeolocation(onPositionUpdate, options = {}) {
         callbackRef.current = onPositionUpdate;
     }, [onPositionUpdate]);
 
-    const haversineMeters = (lat1, lon1, lat2, lon2) => {
-        const p = Math.PI / 180;
-        const c = Math.cos;
-        const a =
-            0.5 -
-            c((lat2 - lat1) * p) / 2 +
-            c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
-        return 12742000 * Math.asin(Math.sqrt(a)); // metres
-    };
-
     useEffect(() => {
         if (!navigator.geolocation) {
             setError('Geolocation is not supported by your browser.');
@@ -47,7 +38,7 @@ export default function useGeolocation(onPositionUpdate, options = {}) {
                 const now = Date.now();
                 const last = lastUpdateRef.current;
                 const timeDiff = now - last.time;
-                const distDiff = haversineMeters(last.lat, last.lon, latitude, longitude);
+                const distDiff = calcDistMeters(last.lat, last.lon, latitude, longitude);
 
                 if (timeDiff > throttleMs || distDiff > minDistanceMeters) {
                     lastUpdateRef.current = { time: now, lat: latitude, lon: longitude };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 
+const MAX_MESSAGE_LENGTH = 1000;
+
 export default function MessagesModal({
     conversations,
     users,
@@ -35,12 +37,21 @@ export default function MessagesModal({
 
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!messageText.trim() || !chatUserId || sending) return;
+        const trimmed = messageText.trim();
+        if (!trimmed || !chatUserId || sending) return;
+        if (trimmed.length > MAX_MESSAGE_LENGTH) return;
 
         setSending(true);
-        await onSendMessage(chatUserId, messageText);
+        await onSendMessage(chatUserId, trimmed);
         setMessageText('');
         setSending(false);
+    };
+
+    const handleMessageChange = (e) => {
+        const value = e.target.value;
+        if (value.length <= MAX_MESSAGE_LENGTH) {
+            setMessageText(value);
+        }
     };
 
     const formatTime = (dateStr) => {
@@ -57,6 +68,12 @@ export default function MessagesModal({
 
         return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
     };
+
+    const charCountClass = messageText.length >= MAX_MESSAGE_LENGTH
+        ? 'char-count at-limit'
+        : messageText.length >= MAX_MESSAGE_LENGTH * 0.9
+            ? 'char-count near-limit'
+            : 'char-count';
 
     // ── Chat View ──
     if (chatUserId) {
@@ -101,16 +118,24 @@ export default function MessagesModal({
                     </div>
 
                     <form className="chat-input-bar" onSubmit={handleSend}>
-                        <input
-                            type="text"
-                            placeholder="Type a message..."
-                            value={messageText}
-                            onChange={(e) => setMessageText(e.target.value)}
-                            autoFocus
-                        />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <input
+                                type="text"
+                                placeholder="Type a message..."
+                                value={messageText}
+                                onChange={handleMessageChange}
+                                maxLength={MAX_MESSAGE_LENGTH}
+                                autoFocus
+                            />
+                            {messageText.length > 0 && (
+                                <span className={charCountClass}>
+                                    {messageText.length}/{MAX_MESSAGE_LENGTH}
+                                </span>
+                            )}
+                        </div>
                         <button
                             type="submit"
-                            disabled={!messageText.trim() || sending}
+                            disabled={!messageText.trim() || sending || messageText.length > MAX_MESSAGE_LENGTH}
                             className="chat-send-btn"
                         >
                             <Send size={18} />
