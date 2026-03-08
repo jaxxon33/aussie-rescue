@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { supabase } from '../supabase';
 
@@ -38,9 +38,13 @@ export default function MapView({ users, currentUser, myPos, myState, centerMapT
             }
         }
 
+        const classes = `marker-icon ${colorClass}${isMe ? ' marker-me' : ''}`;
+        const size = isMe ? 28 : 20;
+
         return new L.DivIcon({
-            className: `marker-icon ${colorClass}`,
-            iconSize: [20, 20],
+            className: classes,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
         });
     };
 
@@ -92,6 +96,14 @@ export default function MapView({ users, currentUser, myPos, myState, centerMapT
                             position={[u.lat, u.lon]}
                             icon={icon}
                         >
+                            <Tooltip
+                                permanent
+                                direction="top"
+                                offset={[0, -(size / 2 + 4)]}
+                                className="marker-tooltip"
+                            >
+                                {u.username}
+                            </Tooltip>
                             <Popup>
                                 <div className="popup-details">
                                     <h3>{u.username}</h3>
